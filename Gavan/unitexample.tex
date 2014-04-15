@@ -1,0 +1,155 @@
+\documentclass{article}
+
+\usepackage{geometry}
+\usepackage{microtype}
+\usepackage{array}
+\usepackage[table]{xcolor}
+\usepackage{mathtools}
+
+
+\newcolumntype{P}{%
+>{\rule[-0.6cm]{0pt}{1.5cm}\centering$}p{1cm}<{$}}
+
+\newcommand{\tbf}[1]{\textbf{#1}}
+
+\begin{document}
+
+Say we have a $5\times5$ grid with a unit somewhere on it. We want to apply a causal entropic force to it and see what happens. Each turn, the unit may stand still or move in any of the available four cardinal directions.
+
+Suppose the unit begins in the cell shaded blue.
+
+\vspace{1em}
+
+\noindent\begin{tabular}{|P|P|P|P|P|}
+\hline
+(1,1) & (1,2) & (1,3) & (1,4) & (1,5) \tabularnewline
+\hline
+(2,1) & \cellcolor{blue!25}(2,2) & (2,3) & (2,4) & (2,5) \tabularnewline
+\hline
+(3,1) & (3,2) & (3,3) & (3,4) & (3,5) \tabularnewline
+\hline
+(4,1) & (4,2) & (4,3) & (4,4) & (4,5) \tabularnewline
+\hline
+(5,1) & (5,2) & (5,3) & (5,4) & (5,5) \tabularnewline
+\hline
+\end{tabular}
+
+\vspace{1em}
+
+Since we will apply the function $\nabla S_c(\textbf{X},t)$, we need to figure out how to write $S_c(\textbf{X},t)$. The state of the system at any time, $\textbf{X}$, is the $x$ and $y$ positions of the unit so we can define $\textbf{X}\equiv (x,y)$.
+
+\section{Greedy Algorithm}
+
+The greedy version of CEF is when the program only looks one step into the future, $t=1$. For our initial condition, we have five possible actions the unit may take: it may move N,S,E,W, or stand still. This brings us to an integral that took me a while to figure out:
+
+\begin{equation}
+S_c(\textbf{X},t)=-\int_{\tbf x(t)} \Pr(\tbf x(t)|\tbf x(0))\ln\Pr(\tbf x(t)|\tbf x(0))\mathcal{D}\tbf x(t)
+\end{equation}
+
+Since we are dealing with discrete states and only looking one step into the future, this integral can be written as a sum.
+
+\begin{equation}
+=-\sum_{\tbf x(1)} \Pr(\tbf x(1)|\tbf x(0)=\tbf X)\ln\Pr(\tbf x(1)|\tbf x(0)=\tbf X)
+\end{equation}
+
+For the greedy algorithm we are only looking one step into the future ($t=1$), so there are only five states $\tbf x(1)$ such that $\Pr(\tbf x(1)|\tbf x(0)=\tbf X)\ne 0$, making the domain
+
+\begin{align}
+\tbf x(0) &= (2,2) = \tbf X\\
+\tbf x(1) &\in\{(1,2),(2,1),(2,2),(2,3),(3,2)\}
+\end{align}
+
+\clearpage
+
+The possible locations at $t=1$ are:
+
+\vspace{1em}
+
+\noindent\begin{tabular}{|P|P|P|P|P|}
+\hline
+(1,1) & \cellcolor{blue!25}(1,2) & (1,3) & (1,4) & (1,5) \tabularnewline
+\hline
+\cellcolor{blue!25}(2,1) & \cellcolor{blue!25}(2,2) & \cellcolor{blue!25}(2,3) & (2,4) & (2,5) \tabularnewline
+\hline
+(3,1) & \cellcolor{blue!25}(3,2) & (3,3) & (3,4) & (3,5) \tabularnewline
+\hline
+(4,1) & (4,2) & (4,3) & (4,4) & (4,5) \tabularnewline
+\hline
+(5,1) & (5,2) & (5,3) & (5,4) & (5,5) \tabularnewline
+\hline
+\end{tabular}
+
+\vspace{1em}
+
+For simplicity, we'll let each possible action be equally likely - in reality it is probably better to add weights to certain classes of actions. In our case, this makes the sum very simple:
+
+\begin{equation}
+=-\sum_{x(1)_i} \frac15 \ln\frac15
+\end{equation}
+
+As there are five possibilities, this simplifies to
+
+\begin{equation}
+=-5\cdot\frac15\ln\frac15 = -\ln\frac15 = \ln 5
+\end{equation}
+
+So the future path entropy of our unit at its current location is $\ln 5$. It is actually the case that if there are $n$ equally likely paths, the path entropy for one time step is $\ln n$.
+
+\clearpage
+
+We can do the same calculation for each cell on the grid, producing:
+
+\vspace{1em}
+
+\noindent\begin{tabular}{|P|P|P|P|P|}
+\hline
+\ln3 & \cellcolor{blue!25}\ln 4 & \ln 4 & \ln 4 & \ln 3 \tabularnewline
+\hline
+\cellcolor{blue!25}\ln 4 & \cellcolor{blue!25}\ln 5 & \cellcolor{blue!25}\ln 5 & \ln 5 & \ln 4 \tabularnewline
+\hline
+\ln 4 & \cellcolor{blue!25}\ln 5 & \ln 5 & \ln 5 & \ln 4  \tabularnewline
+\hline
+\ln 4 & \ln 5 & \ln 5 & \ln 5 & \ln 4 \tabularnewline
+\hline
+\ln 3 & \ln 4 & \ln 4 & \ln 4 & \ln 3 \tabularnewline
+\hline
+\end{tabular}
+
+\vspace{1em}
+
+So our unit will feel a tug towards the center:
+\begin{equation}
+\nabla S_c((2,2),1) = (\ln5-\ln4,\ln5-\ln4) \approx (0.4,0.4)
+\end{equation}
+
+\section{}
+
+But the greedy algorithm only seeks to increase instantaneous path entropy with each step - it will not autonomously seek goals. For that, we need to get the program to see several steps into the future.
+
+Na\"ively, we might try to count every possible path the system can take. This quickly becomes unmanageable. If you'd like the math proof for why the following works, let me know - it just takes a while to type up.
+
+We can write $S_c(\tbf X,t)$ as a recursive function:
+
+\begin{align}
+S_c(\tbf X,t) &= S_c(\tbf X,1) + \sum_{\tbf x(1)} \Pr(\tbf x(1)|\tbf x(0)=\tbf X)S_c(\tbf x(1),t-1)\\
+S_c(\tbf X,1) &= -\sum_{\tbf x(1)} \Pr(\tbf x(1)|\tbf x(0)=\tbf X)\ln \Pr(\tbf x(1)|\tbf x(0)=X)
+\end{align}
+
+So the path entropy for $t=2$ for our unit would become
+\begin{equation}
+\ln 5 + \frac15 \left( 2\ln4 + 3\ln5 \right)
+\end{equation}
+as there are two states the unit can move to with path entropy $\ln4$, two with path entropy $\ln5$, and if it stays still it has path entropy $\ln5$. Since the tile the unit is on has path entropy $\ln5$, that is added to the sum.
+
+\clearpage
+
+So to compute each iteration, all we need is:
+
+\begin{itemize}
+\item The states \tbf X can validly transition to (and the probabilities of doing so)
+\item The path entropy for each state using the greedy algorithm
+\end{itemize}
+
+In my current projects, I implement this by using a lookup table - with each iteration I fill in a new layer.
+
+\end{document}
